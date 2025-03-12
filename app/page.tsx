@@ -3,8 +3,6 @@
 import React, { useContext, Suspense, lazy } from 'react'
 import { userContext } from '@/context/UserContext'
 import Loader from '@/components/Loader' // Fallback loading component
-
-const Navbar = lazy(() => import('@/components/Navbar'))
 const Hero = lazy(() => import('@/components/Hero'))
 const Landing = lazy(() => import('@/components/Landing'))
 
@@ -16,7 +14,7 @@ const Page = () => {
 
   return (
     <Suspense fallback={<Loader />}>
-      <Navbar />
+    
       <Landing />
       {loggedIn && <Hero />}
     </Suspense>

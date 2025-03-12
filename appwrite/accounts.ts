@@ -48,7 +48,7 @@ export const logIn = async (email: string, password: string) => {
       return { message: "Could not find user", status: 400 };
     }
   } catch (error: any) {
-    console.error(error.message);
+    
     return { message: "Invalid email or password", status: 401 };
   }
 };
