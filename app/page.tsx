@@ -1,14 +1,26 @@
-import Landing from '@/components/Landing'
-import Navbar from '@/components/Navbar'
-import React from 'react'
+'use client'
 
-const page = () => {
+import React, { useContext, Suspense, lazy } from 'react'
+import { userContext } from '@/context/UserContext'
+import Loader from '@/components/Loader' // Fallback loading component
+
+const Navbar = lazy(() => import('@/components/Navbar'))
+const Hero = lazy(() => import('@/components/Hero'))
+const Landing = lazy(() => import('@/components/Landing'))
+
+const Page = () => {
+  const ctx = useContext(userContext)
+  if (!ctx) return null
+
+  const { loggedIn } = ctx
+
   return (
-    <div>
-      <Navbar/>
-      <Landing/>
-    </div>
+    <Suspense fallback={<Loader />}>
+      <Navbar />
+      <Landing />
+      {loggedIn && <Hero />}
+    </Suspense>
   )
 }
 
-export default page
+export default Page

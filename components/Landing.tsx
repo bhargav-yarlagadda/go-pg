@@ -1,8 +1,9 @@
+
 import Image from 'next/image';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center px-6 py-12">
+    <div className=" bg-gray-900 text-white flex flex-col items-center justify-center px-6 py-12">
       <h1 className="text-6xl font-extrabold text-blue-500 text-center drop-shadow-lg">Find Your Perfect PG!</h1>
       <p className="text-xl text-gray-300 text-center max-w-2xl leading-relaxed">
         Connecting PG Seekers with PG Hosts Effortlessly. Search, Compare, and Book with Ease.
