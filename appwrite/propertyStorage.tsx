@@ -14,12 +14,12 @@ export const uploadStayImage = async (image:File)=>{
         return {status:false}
     }
 }
-export const getPropertyUrl= async (propertyId:string)=>{
-    try{
-        const resp = await storage.getFile(STORAGE_ID,propertyId)
-        return {status:true,data:resp}
-    }catch(error:any){
-        console.log(error.message)
-        return {status:false}
+export const getPropertyUrl = async (propertyId: string) => {
+    try {
+        const url = storage.getFileView(STORAGE_ID, propertyId); // Generates a public URL for the file
+        return { status: true, data: url };
+    } catch (error: any) {
+        console.log(error.message);
+        return { status: false, data: null };
     }
-}
+};
