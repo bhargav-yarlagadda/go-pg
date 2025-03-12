@@ -29,13 +29,18 @@ export const createUser = async (
 
 export const logIn = async (email: string, password: string) => {
   try {
-    // Step 1: Create a session
-    const session = await account.createEmailPasswordSession(email, password);
+    // Check for an existing session before creating a new one
+    const existingSession = await account.getSession("current").catch(() => null);
     
-    // Step 2: Store session ID in local storage
-    localStorage.setItem("sessionId", session.$id);
+    if (existingSession) {
+      console.log("User already logged in, using existing session.");
+    } else {
+      // Step 1: Create a session only if none exists
+      const session = await account.createEmailPasswordSession(email, password);
+      localStorage.setItem("sessionId", session.$id);
+    }
 
-    // Step 3: Fetch user details
+    // Step 2: Fetch user details
     const user = await getUser(email);
     if (user.status === 200) {
       return { message: "Login successful", data: user.data, status: 200 };
@@ -43,32 +48,41 @@ export const logIn = async (email: string, password: string) => {
       return { message: "Could not find user", status: 400 };
     }
   } catch (error: any) {
+    console.error(error.message);
     return { message: "Invalid email or password", status: 401 };
   }
 };
 
 export const logOut = async (setUser: any, setIsLoggedIn: any) => {
   try {
-    // Get session ID from local storage
-    const sessionId = localStorage.getItem("sessionId");
-
-    if (!sessionId) {
-      throw new Error("No active session found.");
+    const session = await account.get().catch(() => null); // Handle missing session
+    console.log(session)
+    if (session) {
+      await account.deleteSession("current");
+      console.log("Session deleted successfully.");
+    } else {
+      console.warn("No active session found.");
     }
 
-    // Delete the stored session
-    await account.deleteSession(sessionId);
-    
-    // Clear local storage
-    localStorage.removeItem("sessionId");
-
-    // Update UI state
     setUser(undefined);
     setIsLoggedIn(false);
-
-    return { message: "Logout successful", status: 200 };
   } catch (error) {
-    console.error("Logout error:", error);
-    return { message: "Error logging out", status: 500 };
+    setUser(undefined);
+    setIsLoggedIn(false);
+    console.log("Logout error:", error);
   }
 };
+
+
+export const getCurrentSession = async ()=>{
+  try {
+    const session = await account.get()
+  if(!session){
+    return {status:false}
+  }
+  return {status:true,data:session}
+  } catch (error) {
+    return {status:false}
+    
+  }
+}

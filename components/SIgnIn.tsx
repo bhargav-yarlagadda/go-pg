@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { logIn } from '@/appwrite/accounts';
+import { logIn, getCurrentSession } from '@/appwrite/accounts';
+import { getUser } from '@/appwrite/users';
 import { userContext } from '@/context/UserContext';
 
 const SignIn = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  
+
   const userCtx = useContext(userContext);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,25 +26,50 @@ const SignIn = () => {
 
     try {
       const response = await logIn(email, password);
-      
       if (response.status === 200 && response.data) {
-        const userData = {
-          name: response.data.name,
-          email: response.data.email,
-          role: response.data.role, // Ensure `role` exists in `response.data`
-        };
-        userCtx?.setUser(userData); // Ensure setUser expects the correct User type
-        userCtx?.setIsLoggedIn(true);
-      
+        fetchUser();
         router.push('/');
-      }
-      else {
+      } else {
         setErrorMessage(response.message);
       }
     } catch (error: any) {
       setErrorMessage(error?.message || 'Invalid credentials, please try again.');
     }
   };
+
+  const fetchUser = async () => {
+    try {
+      const session = await getCurrentSession();
+      if (!session.status || !session.data?.email) {
+        userCtx?.setUser(undefined);
+        userCtx?.setIsLoggedIn(false);
+        return;
+      }
+
+      const userResponse = await getUser(session.data.email);
+      if (userResponse.status === 200 && userResponse.data) {
+        userCtx?.setUser({
+          name: userResponse.data.name,
+          email: userResponse.data.email,
+          role: userResponse.data.role,
+          phone: userResponse.data.phone,
+          profilePic: userResponse.data.profilePic,
+        });
+        userCtx?.setIsLoggedIn(true);
+      } else {
+        userCtx?.setUser(undefined);
+        userCtx?.setIsLoggedIn(false);
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      userCtx?.setUser(undefined);
+      userCtx?.setIsLoggedIn(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4">

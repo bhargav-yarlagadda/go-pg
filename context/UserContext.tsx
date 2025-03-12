@@ -1,5 +1,7 @@
 'use client';
 
+import { getCurrentSession } from "@/appwrite/accounts";
+import { getUser } from "@/appwrite/users";
 import { createContext, useState, useEffect } from "react";
 
 export type User = {
@@ -20,29 +22,48 @@ export type UserContextType = {
 export const userContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserWrapper = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | undefined>(() => {
-    if (typeof window !== "undefined") { // ✅ Ensure it's running in the browser
-      const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : undefined;
-    }
-    return undefined;
-  });
-
-  const [loggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return typeof window !== "undefined" && localStorage.getItem("user") !== null;
-  });
+  const [user, setUser] = useState<User | undefined>(undefined);
+  const [loggedIn, setIsLoggedIn] = useState<boolean>(
+    () => typeof window !== "undefined" && localStorage.getItem("user") !== null
+  );
 
   useEffect(() => {
-    if (typeof window !== "undefined") { // ✅ Prevents Next.js hydration errors
-      if (user) {
-        localStorage.setItem("user", JSON.stringify(user));
-        setIsLoggedIn(true);
-      } else {
-        localStorage.removeItem("user");
+    const getFn = async () => {
+      try {
+        const session = await getCurrentSession();
+
+        if (!session.status || !session.data?.email) {
+          setUser(undefined);
+          setIsLoggedIn(false);
+          return;
+        }
+
+        const userResponse = await getUser(session.data.email);
+        if (userResponse.status === 200 && userResponse.data) {
+          const userData: User = {
+            name: userResponse.data.name,
+            email: userResponse.data.email,
+            role: userResponse.data.role,
+            phone: userResponse.data.phone,
+            profilePic: userResponse.data.profilePic,
+          };
+
+          setUser(userData);
+          setIsLoggedIn(true);
+        } else {
+          setUser(undefined);
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setUser(undefined);
         setIsLoggedIn(false);
       }
-    }
-  }, [user]);
+    };
+
+    getFn();
+   
+  }, []);
 
   return (
     <userContext.Provider value={{ user, setUser, loggedIn, setIsLoggedIn }}>
